@@ -1,25 +1,32 @@
 from __future__ import print_function
-import numpy as np
-from numpy.linalg import inv, norm, lstsq
-from numpy.linalg import matrix_rank as rank
-import cv2 as cv
-from PIL import Image
+
 import os
 import sys
+
+import cv2 as cv
+import numpy as np
+from numpy.linalg import inv, lstsq
+from numpy.linalg import matrix_rank as rank
+from numpy.linalg import norm
+from PIL import Image
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 
 
-from tool import timer
-from facebase import FaceBase
+from .facebase import FaceBase
+from .tool import timer
 
-REFERENCE_FACIAL_POINTS = np.array([
-    [30.29459953, 51.69630051],
-    [65.53179932, 51.50139999],
-    [48.02519989, 71.73660278],
-    [33.54930115, 92.3655014],
-    [62.72990036, 92.20410156]
-], np.float32)
+REFERENCE_FACIAL_POINTS = np.array(
+    [
+        [30.29459953, 51.69630051],
+        [65.53179932, 51.50139999],
+        [48.02519989, 71.73660278],
+        [33.54930115, 92.3655014],
+        [62.72990036, 92.20410156],
+    ],
+    np.float32,
+)
 
 REFERENCE_X = 96
 REFERENCE_Y = 112
@@ -45,18 +52,14 @@ def findNonreflectiveSimilarity(uv, xy, K=2):
         r, _, _, _ = lstsq(X, U, rcond=-1)
         r = np.squeeze(r)
     else:
-        raise Exception('cp2tform:twoUniquePointsReq')
+        raise Exception("cp2tform:twoUniquePointsReq")
 
     sc = r[0]
     ss = r[1]
     tx = r[2]
     ty = r[3]
 
-    Tinv = np.array([
-        [sc, -ss, 0],
-        [ss, sc, 0],
-        [tx, ty, 1]
-    ])
+    Tinv = np.array([[sc, -ss, 0], [ss, sc, 0], [tx, ty, 1]])
     T = inv(Tinv)
     T[:, 2] = np.array([0, 0, 1])
     T = T[:, 0:2].T
@@ -64,7 +67,9 @@ def findNonreflectiveSimilarity(uv, xy, K=2):
 
 
 class FaceAlign(FaceBase):
-    def __init__(self, weight_path=None, cuda=False, *, borderValue=(0, 0, 0), target_size=112):
+    def __init__(
+        self, weight_path=None, cuda=False, *, borderValue=(0, 0, 0), target_size=112
+    ):
         super().__init__(weight_path, cuda)
         self._borderValue = borderValue
         self._target_size = target_size
@@ -101,13 +106,21 @@ class FaceAlign(FaceBase):
                 # cv.circle(empty_img, (int(xx), int(yy)), 1, (0, 0, 255), 4)
                 REFERENCE_FACIAL_POINTS_SCALE.append([xx, yy])
 
-            REFERENCE_FACIAL_POINTS_SCALE = np.array(REFERENCE_FACIAL_POINTS_SCALE, np.float32)
+            REFERENCE_FACIAL_POINTS_SCALE = np.array(
+                REFERENCE_FACIAL_POINTS_SCALE, np.float32
+            )
             KEY_POINT = np.array([landmark], np.float32)
             KEY_POINT = np.resize(KEY_POINT, [5, 2])
-            similar_trans_matrix = findNonreflectiveSimilarity(KEY_POINT, REFERENCE_FACIAL_POINTS_SCALE)
+            similar_trans_matrix = findNonreflectiveSimilarity(
+                KEY_POINT, REFERENCE_FACIAL_POINTS_SCALE
+            )
 
-            aligned_face = cv.warpAffine(image.copy(), similar_trans_matrix, (w, h),
-                                         borderValue=self._borderValue)
+            aligned_face = cv.warpAffine(
+                image.copy(),
+                similar_trans_matrix,
+                (w, h),
+                borderValue=self._borderValue,
+            )
 
             bg = np.ones((self._target_size, self._target_size, 3), np.uint8)
             bg *= np.array(self._borderValue, dtype=np.uint8)
@@ -121,8 +134,11 @@ class FaceAlign(FaceBase):
                 nw = int(self._target_size / h * w)
 
             aligned_face = cv.resize(aligned_face, (nw, nh), cv.INTER_CUBIC)
-            bg[(self._target_size - nh) // 2: nh + (self._target_size - nh) // 2,
-                (self._target_size - nw) // 2: nw + (self._target_size - nw) // 2, :] = aligned_face
+            bg[
+                (self._target_size - nh) // 2 : nh + (self._target_size - nh) // 2,
+                (self._target_size - nw) // 2 : nw + (self._target_size - nw) // 2,
+                :,
+            ] = aligned_face
 
             aligned_faces.append(bg)
         return aligned_faces

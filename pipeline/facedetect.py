@@ -8,8 +8,8 @@ from RetinaFace.layers.functions.prior_box import PriorBox
 from RetinaFace.utils.nms.py_cpu_nms import py_cpu_nms
 from RetinaFace.utils.box_utils import decode, decode_landm
 
-from tool import timer
-from facebase import FaceBase
+from .tool import timer
+from .facebase import FaceBase
 
 
 class FaceDetect(FaceBase):

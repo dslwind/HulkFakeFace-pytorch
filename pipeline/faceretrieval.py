@@ -1,24 +1,30 @@
 from __future__ import print_function
-from sklearn.preprocessing import normalize
+
 import csv
 import pickle
+
 import numpy as np
 from milvus import Milvus
+from sklearn.preprocessing import normalize
 
-from tool import timer
-from facebase import FaceBase
+from .facebase import FaceBase
+from .tool import timer
 
 
 class FaceRetrival(FaceBase):
-    def __init__(self, weight_path=None,
-                 cuda=False, *,
-                 _HOST='localhost',
-                 _PORT='19530',
-                 _collection_name='chs_stars_faces_512',  # 'chs_stars_faces',
-                 _PCA=None,  # "chs_stars_features_pca.pickle",
-                 _data_base="chs_stars_labels.csv",  # "chs_stars_features_pca.csv", #
-                 _nProbe=64,
-                 _top_k=5):
+    def __init__(
+        self,
+        weight_path=None,
+        cuda=False,
+        *,
+        _HOST="localhost",
+        _PORT="19530",
+        _collection_name="chs_stars_faces_512",  # 'chs_stars_faces',
+        _PCA=None,  # "chs_stars_features_pca.pickle",
+        _data_base="chs_stars_labels.csv",  # "chs_stars_features_pca.csv", #
+        _nProbe=64,
+        _top_k=5
+    ):
         super().__init__(weight_path, cuda)
         self._nprobe = _nProbe
         self._collection_name = _collection_name
@@ -50,14 +56,12 @@ class FaceRetrival(FaceBase):
             features = self._pca_model.transform(features).squeeze().tolist()
         else:
             features = normalize(features).squeeze().tolist()
-        search_param = {
-            "nprobe": self._nprobe
-        }
+        search_param = {"nprobe": self._nprobe}
         param = {
-            'collection_name': self._collection_name,
-            'query_records': [features] if num == 1 else features,
-            'top_k': self._top_k,
-            'params': search_param,
+            "collection_name": self._collection_name,
+            "query_records": [features] if num == 1 else features,
+            "top_k": self._top_k,
+            "params": search_param,
         }
 
         status, q_results = self._milvus.search(**param)
@@ -68,5 +72,5 @@ class FaceRetrival(FaceBase):
                     tmp = self._data_base[str(id)]
                     ret.append({"star": tmp[0], "img": tmp[1], "dis": dis})
 
-        result = [ret[i * self._top_k: (i + 1) * self._top_k] for i in range(num)]
+        result = [ret[i * self._top_k : (i + 1) * self._top_k] for i in range(num)]
         return result

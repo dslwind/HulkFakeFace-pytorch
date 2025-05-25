@@ -1,5 +1,5 @@
-import time
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +14,7 @@ def timer(func):
     def wrapper(*args, **kwargs):
         start_time = time.time()
         res = func(*args, **kwargs)
-        logger.info('{} cost: {}s'.format(func.__name__, time.time() - start_time))
+        logger.info("{} cost: {}s".format(func.__name__, time.time() - start_time))
         return res
 
     return wrapper

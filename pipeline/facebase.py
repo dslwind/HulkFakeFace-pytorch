@@ -1,7 +1,10 @@
 import abc
-from tool import timer
-import torch
 from collections import OrderedDict
+
+import torch
+
+from .tool import timer
+
 
 class FaceBase(abc.ABC):
 
@@ -18,13 +21,15 @@ class FaceBase(abc.ABC):
         return self.__class__.__name__
 
     def initialize(self, **kwargs):
-        checkpoint = torch.load(self.weight_path, map_location='cuda' if self._cuda else 'cpu')
-        if 'model_state_dict' in checkpoint:
-            checkpoint = checkpoint['model_state_dict']
+        checkpoint = torch.load(
+            self.weight_path, map_location="cuda" if self._cuda else "cpu"
+        )
+        if "model_state_dict" in checkpoint:
+            checkpoint = checkpoint["model_state_dict"]
         new_checkpoint = OrderedDict()
         for k, v in checkpoint.items():
-            if k.startswith('module.'):
-                name = k.lstrip('module').lstrip('.')
+            if k.startswith("module."):
+                name = k.lstrip("module").lstrip(".")
                 new_checkpoint[name] = v
             else:
                 new_checkpoint[k] = v
